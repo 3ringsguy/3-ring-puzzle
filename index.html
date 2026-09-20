@@ -14,34 +14,59 @@
       justify-content: center;
       margin: 0;
       padding: 20px;
+      min-height: 100vh;
+      box-sizing: border-box;
     }
-    h2 { margin-bottom: 6px; }
-    p { margin-top: 0; color: #a6adc8; font-size: 14px; }
-    canvas {
+    h2 { margin-bottom: 4px; font-size: 24px; text-align: center; }
+    p { margin-top: 0; margin-bottom: 15px; color: #a6adc8; font-size: 14px; text-align: center; }
+    
+    .game-container {
+      position: relative;
       background-color: #181825;
       border: 2px solid #45475a;
-      border-radius: 12px;
-      cursor: pointer;
+      border-radius: 16px;
+      padding: 15px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
+
+    canvas {
+      cursor: pointer;
+      display: block;
+    }
+
     .btn-container {
       margin-top: 15px;
       display: flex;
       gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
     button {
       background-color: #313244;
       color: #cdd6f4;
       border: 1px solid #585b70;
-      padding: 10px 18px;
+      padding: 10px 20px;
       border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
+      font-size: 14px;
       transition: all 0.2s ease;
     }
     button:hover {
       background-color: #45475a;
       border-color: #89b4fa;
+    }
+
+    #winMessage {
+      margin-top: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #a6e3a1;
+      height: 24px;
+      text-align: center;
     }
   </style>
 </head>
@@ -50,31 +75,37 @@
   <h2>3-Ring Interlocking Puzzle</h2>
   <p>Click any ring area or use the buttons below to rotate clockwise.</p>
 
-  <canvas id="puzzleCanvas" width="600" height="480"></canvas>
+  <div class="game-container">
+    <canvas id="puzzleCanvas" width="600" height="460"></canvas>
+    <div id="winMessage"></div>
+  </div>
 
   <div class="btn-container">
     <button onclick="rotateRing(0)">Rotate Ring 1</button>
     <button onclick="rotateRing(1)">Rotate Ring 2</button>
     <button onclick="rotateRing(2)">Rotate Ring 3</button>
+    <button onclick="scramblePuzzle()">Scramble</button>
   </div>
 
   <script>
     const canvas = document.getElementById('puzzleCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Board state matching C++ array logic
-    let ring = [
+    // Exact Goal State matching reference image
+    const GOAL_STATE = [
       ['G', 'R', 'G', 'R', 'G'], // Ring 1
       ['R', 'B', 'R', 'B', 'R'], // Ring 2
       ['B', 'G', 'B', 'G', 'B']  // Ring 3
     ];
 
+    let ring = JSON.parse(JSON.stringify(GOAL_STATE));
+
     // Geometric Parameters
-    const C1 = { x: 300, y: 150, name: "RING 1" };
-    const C2 = { x: 390, y: 280, name: "RING 2" };
-    const C3 = { x: 210, y: 280, name: "RING 3" };
+    const C1 = { x: 300, y: 140, name: "RING 1" };
+    const C2 = { x: 385, y: 265, name: "RING 2" };
+    const C3 = { x: 215, y: 265, name: "RING 3" };
     const R = 110;
-    const boardCenter = { x: 300, y: 236.6 };
+    const boardCenter = { x: 300, y: 223 };
 
     const colorMap = {
       'G': '#2ecc71', // Green
@@ -82,7 +113,6 @@
       'B': '#3498db'  // Blue
     };
 
-    // Mathematical Circle-Circle Intersection Solver
     function getIntersections(p1, p2, r) {
       const dx = p2.x - p1.x;
       const dy = p2.y - p1.y;
@@ -95,11 +125,80 @@
       const pA = { x: mx + (h * dy) / d, y: my - (h * dx) / d };
       const pB = { x: mx - (h * dy) / d, y: my + (h * dx) / d };
 
-      // Distinguish Inner vs Outer relative to board center
       const distA = Math.hypot(pA.x - boardCenter.x, pA.y - boardCenter.y);
       const distB = Math.hypot(pB.x - boardCenter.x, pB.y - boardCenter.y);
 
       return distA < distB ? { inner: pA, outer: pB } : { inner: pB, outer: pA };
+    }
+
+    function checkWin() {
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 5; j++) {
+          if (ring[i][j] !== GOAL_STATE[i][j]) return false;
+        }
+      }
+      return true;
+    }
+
+    function drawThumbnail() {
+      const tX = 505, tY = 65, tR = 30;
+      const scale = 0.28;
+      
+      ctx.save();
+      ctx.fillStyle = '#1e1e2e';
+      ctx.strokeStyle = '#585b70';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(435, 15, 150, 110, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#cdd6f4';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText("TARGET GOAL", 510, 30);
+
+      const tc1 = { x: 510, y: 55 };
+      const tc2 = { x: 533, y: 88 };
+      const tc3 = { x: 487, y: 88 };
+      const tCenter = { x: 510, y: 77 };
+
+      // Draw mini rings
+      [tc1, tc2, tc3].forEach(c => {
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, tR, 0, Math.PI * 2);
+        ctx.strokeStyle = '#585b70';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
+
+      const tint13 = getIntersections(tc1, tc3, tR);
+      const tint12 = getIntersections(tc1, tc2, tR);
+      const tint23 = getIntersections(tc2, tc3, tR);
+
+      const tNodes = [
+        { x: tc1.x, y: tc1.y - tR, val: GOAL_STATE[0][4] },
+        { x: tc2.x + tR * 0.88, y: tc2.y + tR * 0.48, val: GOAL_STATE[1][4] },
+        { x: tc3.x - tR * 0.88, y: tc3.y + tR * 0.48, val: GOAL_STATE[2][4] },
+        { x: tint13.outer.x, y: tint13.outer.y, val: GOAL_STATE[0][0] },
+        { x: tint13.inner.x, y: tint13.inner.y, val: GOAL_STATE[0][2] },
+        { x: tint12.outer.x, y: tint12.outer.y, val: GOAL_STATE[0][3] },
+        { x: tint12.inner.x, y: tint12.inner.y, val: GOAL_STATE[0][1] },
+        { x: tint23.outer.x, y: tint23.outer.y, val: GOAL_STATE[1][3] },
+        { x: tint23.inner.x, y: tint23.inner.y, val: GOAL_STATE[1][1] }
+      ];
+
+      tNodes.forEach(node => {
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = colorMap[node.val];
+        ctx.fill();
+        ctx.strokeStyle = '#11111b';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      ctx.restore();
     }
 
     function draw() {
@@ -111,58 +210,69 @@
         ctx.beginPath();
         ctx.arc(c.x, c.y, R, 0, Math.PI * 2);
         ctx.strokeStyle = '#585b70';
-        ctx.lineWidth = 5;
+        ctx.lineWidth = 4;
         ctx.stroke();
 
         ctx.fillStyle = '#a6adc8';
-        ctx.font = 'bold 13px sans-serif';
+        ctx.font = 'bold 12px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(c.name, c.x, c.y + (c === C1 ? -35 : 45));
+        ctx.fillText(c.name, c.x, c.y + (c === C1 ? -32 : 40));
       });
 
       // 2. Compute Exact Geometric Positions for the 9 Unique Spots
-      const int13 = getIntersections(C1, C3, R); // Ring 1 & 3
-      const int12 = getIntersections(C1, C2, R); // Ring 1 & 2
-      const int23 = getIntersections(C2, C3, R); // Ring 2 & 3
+      const int13 = getIntersections(C1, C3, R);
+      const int12 = getIntersections(C1, C2, R);
+      const int23 = getIntersections(C2, C3, R);
 
       const nodes = [
-        // Isolated Points
-        { x: C1.x, y: C1.y - R, val: ring[0][4] },                           // Iso 1
-        { x: C2.x + R * 0.88, y: C2.y + R * 0.48, val: ring[1][4] },          // Iso 2
-        { x: C3.x - R * 0.88, y: C3.y + R * 0.48, val: ring[2][4] },          // Iso 3
+        { x: C1.x, y: C1.y - R, val: ring[0][4] },                           // Iso 1 (Top R1)
+        { x: C2.x + R * 0.88, y: C2.y + R * 0.48, val: ring[1][4] },          // Iso 2 (Right R2)
+        { x: C3.x - R * 0.88, y: C3.y + R * 0.48, val: ring[2][4] },          // Iso 3 (Left R3)
 
-        // Ring 1 & 3 Shared Intersections
-        { x: int13.outer.x, y: int13.outer.y, val: ring[0][0] },             // R1-R3 Outer
-        { x: int13.inner.x, y: int13.inner.y, val: ring[0][2] },             // R1-R3 Inner
-
-        // Ring 1 & 2 Shared Intersections
-        { x: int12.outer.x, y: int12.outer.y, val: ring[0][3] },             // R1-R2 Outer
-        { x: int12.inner.x, y: int12.inner.y, val: ring[0][1] },             // R1-R2 Inner
-
-        // Ring 2 & 3 Shared Intersections
-        { x: int23.outer.x, y: int23.outer.y, val: ring[1][3] },             // R2-R3 Outer
-        { x: int23.inner.x, y: int23.inner.y, val: ring[1][1] }              // R2-R3 Inner
+        { x: int13.outer.x, y: int13.outer.y, val: ring[0][0] },             // R1-R3 Outer (Left)
+        { x: int13.inner.x, y: int13.inner.y, val: ring[0][2] },             // Center Top Inner
+        { x: int12.outer.x, y: int12.outer.y, val: ring[0][3] },             // R1-R2 Outer (Right)
+        { x: int12.inner.x, y: int12.inner.y, val: ring[0][1] },             // Center Bottom-Left Inner
+        { x: int23.outer.x, y: int23.outer.y, val: ring[1][3] },             // Bottom Outer
+        { x: int23.inner.x, y: int23.inner.y, val: ring[1][1] }              // Center Bottom-Right Inner
       ];
 
       // 3. Render Exactly 9 Physical Dots
       nodes.forEach(node => {
         ctx.beginPath();
-        ctx.arc(node.x, node.y, 18, 0, Math.PI * 2);
+        ctx.arc(node.x, node.y, 16, 0, Math.PI * 2);
         ctx.fillStyle = colorMap[node.val];
         ctx.fill();
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2.5;
         ctx.strokeStyle = '#11111b';
         ctx.stroke();
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 14px sans-serif';
+        ctx.font = 'bold 13px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(node.val, node.x, node.y);
       });
+
+      // 4. Draw Target Goal Thumbnail
+      drawThumbnail();
+
+      // 5. Watermark
+      ctx.fillStyle = '#6c7086';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText("Created by 5A 25 Ian, 21/9/2026", 15, canvas.height - 10);
+
+      // 6. Win Message Update
+      const winDiv = document.getElementById('winMessage');
+      if (checkWin()) {
+        winDiv.textContent = "You've successfully completed the puzzle!";
+      } else {
+        winDiv.textContent = "";
+      }
     }
 
-    // Engine Rotation Logic
     function rotateRing(ringIdx) {
       let b = ring[ringIdx][4];
       for (let k = 0; k < 4; k++) {
@@ -191,7 +301,29 @@
       draw();
     }
 
-    // Canvas Click Listener
+    // Scramble by applying random valid rotations from goal state (Guarantees exact color count & solvability)
+    function scramblePuzzle() {
+      ring = JSON.parse(JSON.stringify(GOAL_STATE));
+      for (let i = 0; i < 25; i++) {
+        let rIdx = Math.floor(Math.random() * 3);
+        // Execute rotation silently without triggering win checks mid-scramble
+        let b = ring[rIdx][4];
+        for (let k = 0; k < 4; k++) {
+          ring[rIdx][4 - k] = ring[rIdx][3 - k];
+        }
+        ring[rIdx][0] = b;
+
+        if (rIdx === 0) {
+          ring[1][0] = ring[0][3]; ring[1][2] = ring[0][1]; ring[2][1] = ring[0][2]; ring[2][3] = ring[0][0];
+        } else if (rIdx === 1) {
+          ring[2][0] = ring[1][3]; ring[2][2] = ring[1][1]; ring[0][1] = ring[1][2]; ring[0][3] = ring[1][0];
+        } else if (rIdx === 2) {
+          ring[0][0] = ring[2][3]; ring[0][2] = ring[2][1]; ring[1][1] = ring[2][2]; ring[1][3] = ring[2][0];
+        }
+      }
+      draw();
+    }
+
     canvas.addEventListener('click', function(event) {
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
@@ -207,8 +339,8 @@
       }
     });
 
-    draw();
+    // Auto-scramble on initial load
+    scrambleProvider = scramblePuzzle();
   </script>
 </body>
 </html>
-		
