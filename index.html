@@ -95,6 +95,7 @@
       z-index: 10;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       letter-spacing: 0.5px;
+      transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
     }
 
     /* Tiled Background Watermarks */
@@ -186,12 +187,12 @@
     }
   </style>
 </head>
-<body class="light-theme">
+<body>
 
   <!-- Top-Left Control Buttons -->
   <div class="top-left-controls">
     <button class="top-btn" id="langBtn" onclick="toggleLanguage()">中文</button>
-    <button class="top-btn" id="themeBtn" onclick="toggleTheme()">Dark</button>
+    <button class="top-btn" id="themeBtn" onclick="toggleTheme()">Light</button>
   </div>
 
   <!-- Top-Right Timer -->
@@ -216,12 +217,13 @@
   </div>
 
   <script>
-    // State Variables
+    // State Variables (Default Dark Theme)
     let currentLang = 'en';
-    let isDarkTheme = false;
+    let isDarkTheme = true;
     let startTime = null;
     let timerInterval = null;
     let puzzleSolved = false;
+    let timerStarted = false;
 
     const translations = {
       en: {
@@ -286,17 +288,28 @@
     }
 
     // Timer Functions
-    function startTimer() {
-      startTime = Date.now();
-      puzzleSolved = false;
+    function resetTimer() {
       clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
-        if (!puzzleSolved) {
-          const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-          const t = translations[currentLang];
-          document.getElementById('timerDisplay').textContent = t.timeLabel + elapsed + "s";
-        }
-      }, 50);
+      timerStarted = false;
+      puzzleSolved = false;
+      startTime = null;
+      const t = translations[currentLang];
+      document.getElementById('timerDisplay').textContent = t.timeLabel + "0.00s";
+    }
+
+    function startTimerIfNeeded() {
+      if (!timerStarted && !puzzleSolved) {
+        timerStarted = true;
+        startTime = Date.now();
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+          if (!puzzleSolved && timerStarted) {
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+            const t = translations[currentLang];
+            document.getElementById('timerDisplay').textContent = t.timeLabel + elapsed + "s";
+          }
+        }, 50);
+      }
     }
 
     function stopTimer() {
@@ -487,7 +500,7 @@
 
       const winDiv = document.getElementById('winMessage');
       if (checkWin()) {
-        if (!puzzleSolved) {
+        if (timerStarted && !puzzleSolved) {
           stopTimer();
         }
         winDiv.textContent = translations[currentLang].win;
@@ -498,6 +511,9 @@
 
     function rotateRing(ringIdx) {
       if (puzzleSolved) return;
+
+      // Start timer on the very first move
+      startTimerIfNeeded();
 
       let b = ring[ringIdx][4];
       for (let k = 0; k < 4; k++) {
@@ -543,7 +559,7 @@
           ring[0][0] = ring[2][3]; ring[0][2] = ring[2][1]; ring[1][1] = ring[2][2]; ring[1][3] = ring[2][0];
         }
       }
-      startTimer();
+      resetTimer();
       draw();
     }
 
