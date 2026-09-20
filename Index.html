@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3-Ring Interlocking Puzzle</title>
+  <style>
+    body {
+      background-color: #1e1e2e;
+      color: #cdd6f4;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 { margin-bottom: 6px; }
+    p { margin-top: 0; color: #a6adc8; font-size: 14px; }
+    canvas {
+      background-color: #181825;
+      border: 2px solid #45475a;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .btn-container {
+      margin-top: 15px;
+      display: flex;
+      gap: 12px;
+    }
+    button {
+      background-color: #313244;
+      color: #cdd6f4;
+      border: 1px solid #585b70;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    button:hover {
+      background-color: #45475a;
+      border-color: #89b4fa;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>3-Ring Interlocking Puzzle</h2>
+  <p>Click any ring area or use the buttons below to rotate clockwise.</p>
+
+  <canvas id="puzzleCanvas" width="600" height="480"></canvas>
+
+  <div class="btn-container">
+    <button onclick="rotateRing(0)">Rotate Ring 1</button>
+    <button onclick="rotateRing(1)">Rotate Ring 2</button>
+    <button onclick="rotateRing(2)">Rotate Ring 3</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('puzzleCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Board state matching C++ array logic
+    let ring = [
+      ['G', 'R', 'G', 'R', 'G'], // Ring 1
+      ['R', 'B', 'R', 'B', 'R'], // Ring 2
+      ['B', 'G', 'B', 'G', 'B']  // Ring 3
+    ];
+
+    // Geometric Parameters
+    const C1 = { x: 300, y: 150, name: "RING 1" };
+    const C2 = { x: 390, y: 280, name: "RING 2" };
+    const C3 = { x: 210, y: 280, name: "RING 3" };
+    const R = 110;
+    const boardCenter = { x: 300, y: 236.6 };
+
+    const colorMap = {
+      'G': '#2ecc71', // Green
+      'R': '#e74c3c', // Red
+      'B': '#3498db'  // Blue
+    };
+
+    // Mathematical Circle-Circle Intersection Solver
+    function getIntersections(p1, p2, r) {
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      const a = d / 2;
+      const h = Math.sqrt(r * r - a * a);
+      const mx = (p1.x + p2.x) / 2;
+      const my = (p1.y + p2.y) / 2;
+
+      const pA = { x: mx + (h * dy) / d, y: my - (h * dx) / d };
+      const pB = { x: mx - (h * dy) / d, y: my + (h * dx) / d };
+
+      // Distinguish Inner vs Outer relative to board center
+      const distA = Math.hypot(pA.x - boardCenter.x, pA.y - boardCenter.y);
+      const distB = Math.hypot(pB.x - boardCenter.x, pB.y - boardCenter.y);
+
+      return distA < distB ? { inner: pA, outer: pB } : { inner: pB, outer: pA };
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 1. Draw Ring Circumferences
+      const centers = [C1, C2, C3];
+      centers.forEach((c) => {
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, R, 0, Math.PI * 2);
+        ctx.strokeStyle = '#585b70';
+        ctx.lineWidth = 5;
+        ctx.stroke();
+
+        ctx.fillStyle = '#a6adc8';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(c.name, c.x, c.y + (c === C1 ? -35 : 45));
+      });
+
+      // 2. Compute Exact Geometric Positions for the 9 Unique Spots
+      const int13 = getIntersections(C1, C3, R); // Ring 1 & 3
+      const int12 = getIntersections(C1, C2, R); // Ring 1 & 2
+      const int23 = getIntersections(C2, C3, R); // Ring 2 & 3
+
+      const nodes = [
+        // Isolated Points
+        { x: C1.x, y: C1.y - R, val: ring[0][4] },                           // Iso 1
+        { x: C2.x + R * 0.88, y: C2.y + R * 0.48, val: ring[1][4] },          // Iso 2
+        { x: C3.x - R * 0.88, y: C3.y + R * 0.48, val: ring[2][4] },          // Iso 3
+
+        // Ring 1 & 3 Shared Intersections
+        { x: int13.outer.x, y: int13.outer.y, val: ring[0][0] },             // R1-R3 Outer
+        { x: int13.inner.x, y: int13.inner.y, val: ring[0][2] },             // R1-R3 Inner
+
+        // Ring 1 & 2 Shared Intersections
+        { x: int12.outer.x, y: int12.outer.y, val: ring[0][3] },             // R1-R2 Outer
+        { x: int12.inner.x, y: int12.inner.y, val: ring[0][1] },             // R1-R2 Inner
+
+        // Ring 2 & 3 Shared Intersections
+        { x: int23.outer.x, y: int23.outer.y, val: ring[1][3] },             // R2-R3 Outer
+        { x: int23.inner.x, y: int23.inner.y, val: ring[1][1] }              // R2-R3 Inner
+      ];
+
+      // 3. Render Exactly 9 Physical Dots
+      nodes.forEach(node => {
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, 18, 0, Math.PI * 2);
+        ctx.fillStyle = colorMap[node.val];
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#11111b';
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(node.val, node.x, node.y);
+      });
+    }
+
+    // Engine Rotation Logic
+    function rotateRing(ringIdx) {
+      let b = ring[ringIdx][4];
+      for (let k = 0; k < 4; k++) {
+        ring[ringIdx][4 - k] = ring[ringIdx][3 - k];
+      }
+      ring[ringIdx][0] = b;
+
+      // Sync Intersections
+      if (ringIdx === 0) {
+        ring[1][0] = ring[0][3];
+        ring[1][2] = ring[0][1];
+        ring[2][1] = ring[0][2];
+        ring[2][3] = ring[0][0];
+      } else if (ringIdx === 1) {
+        ring[2][0] = ring[1][3];
+        ring[2][2] = ring[1][1];
+        ring[0][1] = ring[1][2];
+        ring[0][3] = ring[1][0];
+      } else if (ringIdx === 2) {
+        ring[0][0] = ring[2][3];
+        ring[0][2] = ring[2][1];
+        ring[1][1] = ring[2][2];
+        ring[1][3] = ring[2][0];
+      }
+
+      draw();
+    }
+
+    // Canvas Click Listener
+    canvas.addEventListener('click', function(event) {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+
+      const centers = [C1, C2, C3];
+      for (let i = 0; i < centers.length; i++) {
+        const dist = Math.hypot(mouseX - centers[i].x, mouseY - centers[i].y);
+        if (dist <= R + 15) {
+          rotateRing(i);
+          break;
+        }
+      }
+    });
+
+    draw();
+  </script>
+</body>
+</html>
+		
