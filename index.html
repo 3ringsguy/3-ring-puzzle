@@ -16,7 +16,44 @@
       padding: 20px;
       min-height: 100vh;
       box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
     }
+
+    /* Tiled Background Watermarks */
+    .bg-watermark-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(6, 1fr);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.12;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .bg-watermark-item {
+      font-size: 16px;
+      font-weight: bold;
+      color: #cdd6f4;
+      transform: rotate(-25deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    h2, p, .game-container, .btn-container {
+      position: relative;
+      z-index: 1;
+    }
+
     h2 { margin-bottom: 4px; font-size: 24px; text-align: center; }
     p { margin-top: 0; margin-bottom: 15px; color: #a6adc8; font-size: 14px; text-align: center; }
     
@@ -72,8 +109,11 @@
 </head>
 <body>
 
+  <!-- Background Watermark Pattern Layer -->
+  <div class="bg-watermark-grid" id="bgWatermarkGrid"></div>
+
   <h2>3-Ring Interlocking Puzzle</h2>
-  <p>Click any ring area or use the buttons below to rotate counterclockwise.</p>
+  <p>Click any ring area or use the buttons below to rotate clockwise.</p>
 
   <div class="game-container">
     <canvas id="puzzleCanvas" width="600" height="460"></canvas>
@@ -88,10 +128,19 @@
   </div>
 
   <script>
+    // Dynamically generate the repeated background watermarks
+    const gridContainer = document.getElementById('bgWatermarkGrid');
+    const handles = ["@myturtlesgame2", "@crazy_calculus"];
+    for (let i = 0; i < 24; i++) {
+      const div = document.createElement('div');
+      div.className = 'bg-watermark-item';
+      div.textContent = handles[i % handles.length];
+      gridContainer.appendChild(div);
+    }
+
     const canvas = document.getElementById('puzzleCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Exact Goal State matching reference image
     const GOAL_STATE = [
       ['G', 'R', 'G', 'R', 'G'], // Ring 1
       ['R', 'B', 'R', 'B', 'R'], // Ring 2
@@ -100,7 +149,6 @@
 
     let ring = JSON.parse(JSON.stringify(GOAL_STATE));
 
-    // Geometric Parameters
     const C1 = { x: 300, y: 140, name: "RING 1" };
     const C2 = { x: 385, y: 265, name: "RING 2" };
     const C3 = { x: 215, y: 265, name: "RING 3" };
@@ -108,9 +156,9 @@
     const boardCenter = { x: 300, y: 223 };
 
     const colorMap = {
-      'G': '#2ecc71', // Green
-      'R': '#e74c3c', // Red
-      'B': '#3498db'  // Blue
+      'G': '#2ecc71',
+      'R': '#e74c3c',
+      'B': '#3498db'
     };
 
     function getIntersections(p1, p2, r) {
@@ -141,9 +189,6 @@
     }
 
     function drawThumbnail() {
-      const tX = 505, tY = 65, tR = 30;
-      const scale = 0.28;
-      
       ctx.save();
       ctx.fillStyle = '#1e1e2e';
       ctx.strokeStyle = '#585b70';
@@ -161,9 +206,8 @@
       const tc1 = { x: 510, y: 55 };
       const tc2 = { x: 533, y: 88 };
       const tc3 = { x: 487, y: 88 };
-      const tCenter = { x: 510, y: 77 };
+      const tR = 30;
 
-      // Draw mini rings
       [tc1, tc2, tc3].forEach(c => {
         ctx.beginPath();
         ctx.arc(c.x, c.y, tR, 0, Math.PI * 2);
@@ -204,7 +248,6 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 1. Draw Ring Circumferences
       const centers = [C1, C2, C3];
       centers.forEach((c) => {
         ctx.beginPath();
@@ -219,25 +262,22 @@
         ctx.fillText(c.name, c.x, c.y + (c === C1 ? -32 : 40));
       });
 
-      // 2. Compute Exact Geometric Positions for the 9 Unique Spots
       const int13 = getIntersections(C1, C3, R);
       const int12 = getIntersections(C1, C2, R);
       const int23 = getIntersections(C2, C3, R);
 
       const nodes = [
-        { x: C1.x, y: C1.y - R, val: ring[0][4] },                           // Iso 1 (Top R1)
-        { x: C2.x + R * 0.88, y: C2.y + R * 0.48, val: ring[1][4] },          // Iso 2 (Right R2)
-        { x: C3.x - R * 0.88, y: C3.y + R * 0.48, val: ring[2][4] },          // Iso 3 (Left R3)
-
-        { x: int13.outer.x, y: int13.outer.y, val: ring[0][0] },             // R1-R3 Outer (Left)
-        { x: int13.inner.x, y: int13.inner.y, val: ring[0][2] },             // Center Top Inner
-        { x: int12.outer.x, y: int12.outer.y, val: ring[0][3] },             // R1-R2 Outer (Right)
-        { x: int12.inner.x, y: int12.inner.y, val: ring[0][1] },             // Center Bottom-Left Inner
-        { x: int23.outer.x, y: int23.outer.y, val: ring[1][3] },             // Bottom Outer
-        { x: int23.inner.x, y: int23.inner.y, val: ring[1][1] }              // Center Bottom-Right Inner
+        { x: C1.x, y: C1.y - R, val: ring[0][4] },
+        { x: C2.x + R * 0.88, y: C2.y + R * 0.48, val: ring[1][4] },
+        { x: C3.x - R * 0.88, y: C3.y + R * 0.48, val: ring[2][4] },
+        { x: int13.outer.x, y: int13.outer.y, val: ring[0][0] },
+        { x: int13.inner.x, y: int13.inner.y, val: ring[0][2] },
+        { x: int12.outer.x, y: int12.outer.y, val: ring[0][3] },
+        { x: int12.inner.x, y: int12.inner.y, val: ring[0][1] },
+        { x: int23.outer.x, y: int23.outer.y, val: ring[1][3] },
+        { x: int23.inner.x, y: int23.inner.y, val: ring[1][1] }
       ];
 
-      // 3. Render Exactly 9 Physical Dots
       nodes.forEach(node => {
         ctx.beginPath();
         ctx.arc(node.x, node.y, 16, 0, Math.PI * 2);
@@ -254,17 +294,14 @@
         ctx.fillText(node.val, node.x, node.y);
       });
 
-      // 4. Draw Target Goal Thumbnail
       drawThumbnail();
 
-      // 5. Watermark
       ctx.fillStyle = '#6c7086';
       ctx.font = '11px sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'bottom';
       ctx.fillText("Created by 5A 25 Ian, 21/9/2026", 15, canvas.height - 10);
 
-      // 6. Win Message Update
       const winDiv = document.getElementById('winMessage');
       if (checkWin()) {
         winDiv.textContent = "You've successfully completed the puzzle!";
@@ -280,7 +317,6 @@
       }
       ring[ringIdx][0] = b;
 
-      // Sync Intersections
       if (ringIdx === 0) {
         ring[1][0] = ring[0][3];
         ring[1][2] = ring[0][1];
@@ -301,12 +337,10 @@
       draw();
     }
 
-    // Scramble by applying random valid rotations from goal state (Guarantees exact color count & solvability)
     function scramblePuzzle() {
       ring = JSON.parse(JSON.stringify(GOAL_STATE));
       for (let i = 0; i < 25; i++) {
         let rIdx = Math.floor(Math.random() * 3);
-        // Execute rotation silently without triggering win checks mid-scramble
         let b = ring[rIdx][4];
         for (let k = 0; k < 4; k++) {
           ring[rIdx][4 - k] = ring[rIdx][3 - k];
@@ -339,8 +373,7 @@
       }
     });
 
-    // Auto-scramble on initial load
-    scrambleProvider = scramblePuzzle();
+    scramblePuzzle();
   </script>
 </body>
 </html>
