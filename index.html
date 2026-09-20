@@ -261,24 +261,25 @@
 
     function drawThumbnail() {
       ctx.save();
-      // Box shifted down to give clean space for label on top
+      
+      // Text placed cleanly ABOVE the thumbnail box
+      ctx.fillStyle = '#cdd6f4';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(translations[currentLang].targetGoal, 510, 26);
+
+      // Thumbnail box shifted down to make space
       ctx.fillStyle = '#1e1e2e';
       ctx.strokeStyle = '#585b70';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.roundRect(435, 30, 150, 115, 8);
+      ctx.roundRect(435, 36, 150, 115, 8);
       ctx.fill();
       ctx.stroke();
 
-      // HTML-like crisp text label drawn above the rings inside box
-      ctx.fillStyle = '#cdd6f4';
-      ctx.font = 'bold 10px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(translations[currentLang].targetGoal, 510, 48);
-
-      const tc1 = { x: 510, y: 70 };
-      const tc2 = { x: 533, y: 103 };
-      const tc3 = { x: 487, y: 103 };
+      const tc1 = { x: 510, y: 76 };
+      const tc2 = { x: 533, y: 109 };
+      const tc3 = { x: 487, y: 109 };
       const tR = 30;
 
       [tc1, tc2, tc3].forEach(c => {
