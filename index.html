@@ -20,6 +20,28 @@
       overflow: hidden;
     }
 
+    /* Top-Left Language Switcher Button */
+    .lang-switch-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background-color: #313244;
+      color: #cdd6f4;
+      border: 1px solid #585b70;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 13px;
+      z-index: 10;
+      transition: all 0.2s ease;
+    }
+    .lang-switch-btn:hover {
+      background-color: #45475a;
+      border-color: #89b4fa;
+      color: #89b4fa;
+    }
+
     /* Tiled Background Watermarks */
     .bg-watermark-grid {
       position: absolute;
@@ -81,7 +103,7 @@
       flex-wrap: wrap;
       justify-content: center;
     }
-    button {
+    button.game-btn {
       background-color: #313244;
       color: #cdd6f4;
       border: 1px solid #585b70;
@@ -92,7 +114,7 @@
       font-size: 14px;
       transition: all 0.2s ease;
     }
-    button:hover {
+    button.game-btn:hover {
       background-color: #45475a;
       border-color: #89b4fa;
     }
@@ -109,11 +131,14 @@
 </head>
 <body>
 
+  <!-- Language Switcher Button (Top Left) -->
+  <button class="lang-switch-btn" id="langBtn" onclick="toggleLanguage()">中文</button>
+
   <!-- Background Watermark Pattern Layer -->
   <div class="bg-watermark-grid" id="bgWatermarkGrid"></div>
 
-  <h2>3-Ring Interlocking Puzzle</h2>
-  <p>Click any ring area or use the buttons below to rotate counterclockwise.</p>
+  <h2 id="txtTitle">3-Ring Interlocking Puzzle</h2>
+  <p id="txtInstruction">Click any ring area or use the buttons below to rotate counterclockwise.</p>
 
   <div class="game-container">
     <canvas id="puzzleCanvas" width="600" height="460"></canvas>
@@ -121,13 +146,59 @@
   </div>
 
   <div class="btn-container">
-    <button onclick="rotateRing(0)">Rotate Ring 1</button>
-    <button onclick="rotateRing(1)">Rotate Ring 2</button>
-    <button onclick="rotateRing(2)">Rotate Ring 3</button>
-    <button onclick="scramblePuzzle()">Scramble</button>
+    <button class="game-btn" id="btnRotate1" onclick="rotateRing(0)">Rotate Ring 1</button>
+    <button class="game-btn" id="btnRotate2" onclick="rotateRing(1)">Rotate Ring 2</button>
+    <button class="game-btn" id="btnRotate3" onclick="rotateRing(2)">Rotate Ring 3</button>
+    <button class="game-btn" id="btnScramble" onclick="scramblePuzzle()">Scramble</button>
   </div>
 
   <script>
+    // Language State ('en' or 'zh')
+    let currentLang = 'en';
+
+    const translations = {
+      en: {
+        langBtn: "中文",
+        title: "3-Ring Interlocking Puzzle",
+        instruction: "Click any ring area or use the buttons below to rotate counterclockwise.",
+        targetGoal: "TARGET GOAL",
+        ring1: "RING 1",
+        ring2: "RING 2",
+        ring3: "RING 3",
+        rot1: "Rotate Ring 1",
+        rot2: "Rotate Ring 2",
+        rot3: "Rotate Ring 3",
+        scramble: "Scramble",
+        win: "You've successfully completed the puzzle!"
+      },
+      zh: {
+        langBtn: "Eng",
+        title: "三環相扣拼圖",
+        instruction: "點擊任意環區域或使用下方按鈕進行逆時針旋轉。",
+        targetGoal: "目標完成狀態",
+        ring1: "第一環",
+        ring2: "第二環",
+        ring3: "第三環",
+        rot1: "旋轉第一環",
+        rot2: "旋轉第二環",
+        rot3: "旋轉第三環",
+        scramble: "打亂重置",
+        win: "恭喜你成功完成拼圖！"
+      }
+    };
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'en' ? 'zh' : 'en';
+      document.getElementById('langBtn').textContent = translations[currentLang].langBtn;
+      document.getElementById('txtTitle').textContent = translations[currentLang].title;
+      document.getElementById('txtInstruction').textContent = translations[currentLang].instruction;
+      document.getElementById('btnRotate1').textContent = translations[currentLang].rot1;
+      document.getElementById('btnRotate2').textContent = translations[currentLang].rot2;
+      document.getElementById('btnRotate3').textContent = translations[currentLang].rot3;
+      document.getElementById('btnScramble').textContent = translations[currentLang].scramble;
+      draw();
+    }
+
     // Dynamically generate the repeated background watermarks
     const gridContainer = document.getElementById('bgWatermarkGrid');
     const handles = ["@myturtlesgame2", "@crazy_calculus"];
@@ -149,9 +220,9 @@
 
     let ring = JSON.parse(JSON.stringify(GOAL_STATE));
 
-    const C1 = { x: 300, y: 140, name: "RING 1" };
-    const C2 = { x: 385, y: 265, name: "RING 2" };
-    const C3 = { x: 215, y: 265, name: "RING 3" };
+    const C1 = { x: 300, y: 140, key: "ring1" };
+    const C2 = { x: 385, y: 265, key: "ring2" };
+    const C3 = { x: 215, y: 265, key: "ring3" };
     const R = 110;
     const boardCenter = { x: 300, y: 223 };
 
@@ -201,7 +272,7 @@
       ctx.fillStyle = '#cdd6f4';
       ctx.font = 'bold 10px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText("TARGET GOAL", 510, 30);
+      ctx.fillText(translations[currentLang].targetGoal, 510, 30);
 
       const tc1 = { x: 510, y: 55 };
       const tc2 = { x: 533, y: 88 };
@@ -259,7 +330,7 @@
         ctx.fillStyle = '#a6adc8';
         ctx.font = 'bold 12px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(c.name, c.x, c.y + (c === C1 ? -32 : 40));
+        ctx.fillText(translations[currentLang][c.key], c.x, c.y + (c === C1 ? -32 : 40));
       });
 
       const int13 = getIntersections(C1, C3, R);
@@ -304,7 +375,7 @@
 
       const winDiv = document.getElementById('winMessage');
       if (checkWin()) {
-        winDiv.textContent = "You've successfully completed the puzzle!";
+        winDiv.textContent = translations[currentLang].win;
       } else {
         winDiv.textContent = "";
       }
