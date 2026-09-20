@@ -4,9 +4,41 @@
   <meta charset="UTF-8">
   <title>3-Ring Interlocking Puzzle</title>
   <style>
+    :root {
+      --bg-color: #1e1e2e;
+      --text-color: #cdd6f4;
+      --subtext-color: #a6adc8;
+      --container-bg: #181825;
+      --border-color: #45475a;
+      --btn-bg: #313244;
+      --btn-hover: #45475a;
+      --btn-border: #585b70;
+      --btn-text: #cdd6f4;
+      --win-color: #a6e3a1;
+      --node-stroke: #11111b;
+      --thumbnail-bg: #1e1e2e;
+      --watermark-opacity: 0.12;
+    }
+
+    body.light-theme {
+      --bg-color: #f0f2f5;
+      --text-color: #2e303e;
+      --subtext-color: #5c5f77;
+      --container-bg: #ffffff;
+      --border-color: #ccd0da;
+      --btn-bg: #e6e9ef;
+      --btn-hover: #dce0e8;
+      --btn-border: #bcc0cc;
+      --btn-text: #2e303e;
+      --win-color: #40a02b;
+      --node-stroke: #ffffff;
+      --thumbnail-bg: #f8f9fc;
+      --watermark-opacity: 0.08;
+    }
+
     body {
-      background-color: #1e1e2e;
-      color: #cdd6f4;
+      background-color: var(--bg-color);
+      color: var(--text-color);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
       flex-direction: column;
@@ -18,28 +50,51 @@
       box-sizing: border-box;
       position: relative;
       overflow: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    /* Top-Left Language Switcher Button */
-    .lang-switch-btn {
+    /* Top-Left Controls Container */
+    .top-left-controls {
       position: absolute;
       top: 20px;
       left: 20px;
-      background-color: #313244;
-      color: #cdd6f4;
-      border: 1px solid #585b70;
-      padding: 8px 16px;
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .top-btn {
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+      border: 1px solid var(--btn-border);
+      padding: 8px 14px;
       border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
       font-size: 13px;
-      z-index: 10;
       transition: all 0.2s ease;
     }
-    .lang-switch-btn:hover {
-      background-color: #45475a;
+    .top-btn:hover {
+      background-color: var(--btn-hover);
       border-color: #89b4fa;
       color: #89b4fa;
+    }
+
+    /* Top-Right Timer */
+    .timer-display {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: var(--container-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 14px;
+      z-index: 10;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      letter-spacing: 0.5px;
     }
 
     /* Tiled Background Watermarks */
@@ -54,15 +109,16 @@
       grid-template-rows: repeat(6, 1fr);
       pointer-events: none;
       z-index: 0;
-      opacity: 0.12;
+      opacity: var(--watermark-opacity);
       padding: 20px;
       box-sizing: border-box;
+      transition: opacity 0.3s ease;
     }
 
     .bg-watermark-item {
       font-size: 16px;
       font-weight: bold;
-      color: #cdd6f4;
+      color: var(--text-color);
       transform: rotate(-25deg);
       display: flex;
       align-items: center;
@@ -77,18 +133,19 @@
     }
 
     h2 { margin-bottom: 4px; font-size: 24px; text-align: center; }
-    p { margin-top: 0; margin-bottom: 15px; color: #a6adc8; font-size: 14px; text-align: center; }
+    p { margin-top: 0; margin-bottom: 15px; color: var(--subtext-color); font-size: 14px; text-align: center; }
     
     .game-container {
       position: relative;
-      background-color: #181825;
-      border: 2px solid #45475a;
+      background-color: var(--container-bg);
+      border: 2px solid var(--border-color);
       border-radius: 16px;
       padding: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
       display: flex;
       flex-direction: column;
       align-items: center;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
     }
 
     canvas {
@@ -104,9 +161,9 @@
       justify-content: center;
     }
     button.game-btn {
-      background-color: #313244;
-      color: #cdd6f4;
-      border: 1px solid #585b70;
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+      border: 1px solid var(--btn-border);
       padding: 10px 20px;
       border-radius: 8px;
       font-weight: bold;
@@ -115,7 +172,7 @@
       transition: all 0.2s ease;
     }
     button.game-btn:hover {
-      background-color: #45475a;
+      background-color: var(--btn-hover);
       border-color: #89b4fa;
     }
 
@@ -123,16 +180,22 @@
       margin-top: 12px;
       font-size: 16px;
       font-weight: bold;
-      color: #a6e3a1;
+      color: var(--win-color);
       height: 24px;
       text-align: center;
     }
   </style>
 </head>
-<body>
+<body class="light-theme">
 
-  <!-- Language Switcher Button (Top Left) -->
-  <button class="lang-switch-btn" id="langBtn" onclick="toggleLanguage()">中文</button>
+  <!-- Top-Left Control Buttons -->
+  <div class="top-left-controls">
+    <button class="top-btn" id="langBtn" onclick="toggleLanguage()">中文</button>
+    <button class="top-btn" id="themeBtn" onclick="toggleTheme()">Dark</button>
+  </div>
+
+  <!-- Top-Right Timer -->
+  <div class="timer-display" id="timerDisplay">Time: 0.00s</div>
 
   <!-- Background Watermark Pattern Layer -->
   <div class="bg-watermark-grid" id="bgWatermarkGrid"></div>
@@ -153,12 +216,18 @@
   </div>
 
   <script>
-    // Language State ('en' or 'zh')
+    // State Variables
     let currentLang = 'en';
+    let isDarkTheme = false;
+    let startTime = null;
+    let timerInterval = null;
+    let puzzleSolved = false;
 
     const translations = {
       en: {
         langBtn: "中文",
+        darkBtn: "Dark",
+        lightBtn: "Light",
         title: "3-Ring Interlocking Puzzle",
         instruction: "Click any ring area or use the buttons below to rotate counterclockwise.",
         targetGoal: "TARGET GOAL",
@@ -169,10 +238,13 @@
         rot2: "Rotate Ring 2",
         rot3: "Rotate Ring 3",
         scramble: "Scramble",
-        win: "You've successfully completed the puzzle!"
+        win: "You've successfully completed the puzzle!",
+        timeLabel: "Time: "
       },
       zh: {
         langBtn: "Eng",
+        darkBtn: "深色",
+        lightBtn: "淺色",
         title: "三環相扣拼圖",
         instruction: "點擊任意環區域或使用下方按鈕進行逆時針旋轉。",
         targetGoal: "目標完成狀態",
@@ -183,20 +255,53 @@
         rot2: "旋轉第二環",
         rot3: "旋轉第三環",
         scramble: "打亂重置",
-        win: "恭喜你成功完成拼圖！"
+        win: "恭喜你成功完成拼圖！",
+        timeLabel: "時間: "
       }
     };
 
     function toggleLanguage() {
       currentLang = currentLang === 'en' ? 'zh' : 'en';
-      document.getElementById('langBtn').textContent = translations[currentLang].langBtn;
-      document.getElementById('txtTitle').textContent = translations[currentLang].title;
-      document.getElementById('txtInstruction').textContent = translations[currentLang].instruction;
-      document.getElementById('btnRotate1').textContent = translations[currentLang].rot1;
-      document.getElementById('btnRotate2').textContent = translations[currentLang].rot2;
-      document.getElementById('btnRotate3').textContent = translations[currentLang].rot3;
-      document.getElementById('btnScramble').textContent = translations[currentLang].scramble;
+      updateUIText();
       draw();
+    }
+
+    function toggleTheme() {
+      isDarkTheme = !isDarkTheme;
+      document.body.classList.toggle('light-theme', !isDarkTheme);
+      updateUIText();
+      draw();
+    }
+
+    function updateUIText() {
+      const t = translations[currentLang];
+      document.getElementById('langBtn').textContent = t.langBtn;
+      document.getElementById('themeBtn').textContent = isDarkTheme ? t.lightBtn : t.darkBtn;
+      document.getElementById('txtTitle').textContent = t.title;
+      document.getElementById('txtInstruction').textContent = t.instruction;
+      document.getElementById('btnRotate1').textContent = t.rot1;
+      document.getElementById('btnRotate2').textContent = t.rot2;
+      document.getElementById('btnRotate3').textContent = t.rot3;
+      document.getElementById('btnScramble').textContent = t.scramble;
+    }
+
+    // Timer Functions
+    function startTimer() {
+      startTime = Date.now();
+      puzzleSolved = false;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (!puzzleSolved) {
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+          const t = translations[currentLang];
+          document.getElementById('timerDisplay').textContent = t.timeLabel + elapsed + "s";
+        }
+      }, 50);
+    }
+
+    function stopTimer() {
+      puzzleSolved = true;
+      clearInterval(timerInterval);
     }
 
     // Dynamically generate the repeated background watermarks
@@ -262,15 +367,15 @@
     function drawThumbnail() {
       ctx.save();
       
-      // Text placed cleanly ABOVE the thumbnail box
-      ctx.fillStyle = '#cdd6f4';
+      // Target Goal Text
+      ctx.fillStyle = isDarkTheme ? '#cdd6f4' : '#2e303e';
       ctx.font = 'bold 11px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(translations[currentLang].targetGoal, 510, 26);
 
-      // Thumbnail box shifted down to make space
-      ctx.fillStyle = '#1e1e2e';
-      ctx.strokeStyle = '#585b70';
+      // Thumbnail Box
+      ctx.fillStyle = isDarkTheme ? '#1e1e2e' : '#f8f9fc';
+      ctx.strokeStyle = isDarkTheme ? '#585b70' : '#ccd0da';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.roundRect(435, 36, 150, 115, 8);
@@ -285,7 +390,7 @@
       [tc1, tc2, tc3].forEach(c => {
         ctx.beginPath();
         ctx.arc(c.x, c.y, tR, 0, Math.PI * 2);
-        ctx.strokeStyle = '#585b70';
+        ctx.strokeStyle = isDarkTheme ? '#585b70' : '#ccd0da';
         ctx.lineWidth = 1.5;
         ctx.stroke();
       });
@@ -311,7 +416,7 @@
         ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
         ctx.fillStyle = colorMap[node.val];
         ctx.fill();
-        ctx.strokeStyle = '#11111b';
+        ctx.strokeStyle = isDarkTheme ? '#11111b' : '#ffffff';
         ctx.lineWidth = 1;
         ctx.stroke();
       });
@@ -322,15 +427,19 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      const ringStrokeColor = isDarkTheme ? '#585b70' : '#b8c0de';
+      const labelColor = isDarkTheme ? '#a6adc8' : '#4c4f69';
+      const nodeStrokeColor = isDarkTheme ? '#11111b' : '#ffffff';
+
       const centers = [C1, C2, C3];
       centers.forEach((c) => {
         ctx.beginPath();
         ctx.arc(c.x, c.y, R, 0, Math.PI * 2);
-        ctx.strokeStyle = '#585b70';
+        ctx.strokeStyle = ringStrokeColor;
         ctx.lineWidth = 4;
         ctx.stroke();
 
-        ctx.fillStyle = '#a6adc8';
+        ctx.fillStyle = labelColor;
         ctx.font = 'bold 12px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(translations[currentLang][c.key], c.x, c.y + (c === C1 ? -32 : 40));
@@ -358,7 +467,7 @@
         ctx.fillStyle = colorMap[node.val];
         ctx.fill();
         ctx.lineWidth = 2.5;
-        ctx.strokeStyle = '#11111b';
+        ctx.strokeStyle = nodeStrokeColor;
         ctx.stroke();
 
         ctx.fillStyle = '#ffffff';
@@ -370,7 +479,7 @@
 
       drawThumbnail();
 
-      ctx.fillStyle = '#6c7086';
+      ctx.fillStyle = labelColor;
       ctx.font = '11px sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'bottom';
@@ -378,6 +487,9 @@
 
       const winDiv = document.getElementById('winMessage');
       if (checkWin()) {
+        if (!puzzleSolved) {
+          stopTimer();
+        }
         winDiv.textContent = translations[currentLang].win;
       } else {
         winDiv.textContent = "";
@@ -385,6 +497,8 @@
     }
 
     function rotateRing(ringIdx) {
+      if (puzzleSolved) return;
+
       let b = ring[ringIdx][4];
       for (let k = 0; k < 4; k++) {
         ring[ringIdx][4 - k] = ring[ringIdx][3 - k];
@@ -429,6 +543,7 @@
           ring[0][0] = ring[2][3]; ring[0][2] = ring[2][1]; ring[1][1] = ring[2][2]; ring[1][3] = ring[2][0];
         }
       }
+      startTimer();
       draw();
     }
 
