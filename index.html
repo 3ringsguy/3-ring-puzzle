@@ -167,8 +167,9 @@
       transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
     }
 
-    /* Falling Rain Watermarks Container */
-    .matrix-rain-container {
+    /* Watermarks Containers */
+    .matrix-rain-container,
+    .static-watermark-container {
       position: absolute;
       top: 0;
       left: 0;
@@ -181,8 +182,14 @@
       transition: opacity 0.3s ease;
     }
 
+    /* Matrix Themes Show Rain (90 deg) */
     body.matrix-theme .matrix-rain-container,
     body.matrix-bw-theme .matrix-rain-container {
+      opacity: 1;
+    }
+
+    /* Dark/Light Themes Show Side-by-side Watermark (0 deg) */
+    body:not(.matrix-theme):not(.matrix-bw-theme) .static-watermark-container {
       opacity: 1;
     }
 
@@ -198,12 +205,10 @@
       animation-iteration-count: infinite;
     }
 
-    /* Matrix Green Shine */
     body.matrix-theme .rain-drop {
       animation-name: fallRain, matrixGreenShine;
     }
 
-    /* Matrix B&W Shine */
     body.matrix-bw-theme .rain-drop {
       animation-name: fallRain, matrixBwShine;
     }
@@ -245,6 +250,31 @@
         color: #ffffff;
         text-shadow: 0 0 12px #ffffff, 0 0 20px #ffffff;
       }
+    }
+
+    /* Side-by-Side Grid Watermark for Dark/Light Themes (0 degrees) */
+    .static-watermark-grid {
+      position: absolute;
+      top: -20%;
+      left: -20%;
+      width: 140%;
+      height: 140%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      align-content: space-around;
+      transform: rotate(0deg);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .static-watermark-item {
+      font-size: 15px;
+      font-weight: bold;
+      color: var(--text-color);
+      opacity: var(--watermark-opacity);
+      user-select: none;
+      white-space: nowrap;
+      padding: 30px 40px;
     }
 
     h2, p, .game-container, .btn-container {
@@ -331,8 +361,26 @@
   <!-- Top-Right Timer -->
   <div class="timer-display" id="timerDisplay">Time: 0.00s</div>
 
-  <!-- Falling Matrix Rain Watermark Layer -->
+  <!-- Falling Matrix Rain Watermark Layer (Matrix Themes) -->
   <div class="matrix-rain-container" id="matrixRainContainer"></div>
+
+  <!-- Side-by-side Grid Watermark Layer (Dark & Light Themes) -->
+  <div class="static-watermark-container" id="staticWatermarkContainer">
+    <div class="static-watermark-grid" id="staticWatermarkGrid">
+      <div class="static-watermark-item">@myturtlesgame2</div>
+      <div class="static-watermark-item">@crazy_calculus</div>
+      <div class="static-watermark-item">@myturtlesgame2</div>
+      <div class="static-watermark-item">@crazy_calculus</div>
+      <div class="static-watermark-item">@myturtlesgame2</div>
+      <div class="static-watermark-item">@crazy_calculus</div>
+      <div class="static-watermark-item">@myturtlesgame2</div>
+      <div class="static-watermark-item">@crazy_calculus</div>
+      <div class="static-watermark-item">@myturtlesgame2</div>
+      <div class="static-watermark-item">@crazy_calculus</div>
+      <div class="static-watermark-item">@myturtlesgame2</div>
+      <div class="static-watermark-item">@crazy_calculus</div>
+    </div>
+  </div>
 
   <h2 id="txtTitle">3-Ring Interlocking Puzzle</h2>
   <p id="txtInstruction">Click any ring, use buttons below, or press keys 1, 2, 3 to rotate counterclockwise.</p>
@@ -357,6 +405,7 @@
     let timerInterval = null;
     let puzzleSolved = false;
     let timerStarted = false;
+    let moveCounter = 0; // Tracks moves for odd/even column shift feature
 
     const translations = {
       en: {
@@ -410,7 +459,6 @@
       menu.classList.toggle('show');
     }
 
-    // Close settings menu when clicking outside
     window.addEventListener('click', function(e) {
       const container = document.getElementById('settingsContainer');
       if (!container.contains(e.target)) {
@@ -437,6 +485,14 @@
       updateUIText();
       draw();
     }
+
+    fnTriggerWatermarkMove = function() {
+      moveCounter++;
+      const grid = document.getElementById('staticWatermarkGrid');
+      // Odd column movement: Right (+45px), Even column movement: Left (-45px)
+      const shiftAmount = (moveCounter % 2 !== 0) ? 45 : -45;
+      grid.style.transform = `translateX(${shiftAmount}px)`;
+    };
 
     function updateUIText() {
       const t = translations[currentLang];
@@ -489,21 +545,20 @@
       clearInterval(timerInterval);
     }
 
-    // Generate high-frequency, unevenly randomized falling rain watermarks
+    // Generate high-frequency, unevenly randomized falling rain watermarks (Matrix Themes)
     const rainContainer = document.getElementById('matrixRainContainer');
     const handles = ["@myturtlesgame2", "@crazy_calculus"];
-    const dropCount = 45; // Increased frequency
+    const dropCount = 45;
 
     for (let i = 0; i < dropCount; i++) {
       const div = document.createElement('div');
       div.className = 'rain-drop';
       div.textContent = handles[Math.floor(Math.random() * handles.length)];
       
-      // Uneven randomized positions, durations, delays, and opacities
       const randomLeft = Math.random() * 100;
-      const randomDuration = 2.5 + Math.random() * 4.5; // between 2.5s and 7s
-      const randomDelay = Math.random() * 6; // staggered start times
-      const randomFontSize = 11 + Math.floor(Math.random() * 7); // 11px to 17px
+      const randomDuration = 2.5 + Math.random() * 4.5;
+      const randomDelay = Math.random() * 6;
+      const randomFontSize = 11 + Math.floor(Math.random() * 7);
       
       div.style.left = `${randomLeft}%`;
       div.style.animationDuration = `${randomDuration}s, ${1.0 + Math.random() * 1.5}s`;
@@ -566,7 +621,6 @@
     function drawThumbnail() {
       ctx.save();
       
-      // Target Goal Text Color Configuration
       let targetTextColor = '#cdd6f4';
       let thumbBoxBg = '#1e1e2e';
       let thumbBoxBorder = '#585b70';
@@ -594,7 +648,6 @@
       ctx.textAlign = 'center';
       ctx.fillText(translations[currentLang].targetGoal, 510, 26);
 
-      // Thumbnail Box
       ctx.fillStyle = thumbBoxBg;
       ctx.strokeStyle = thumbBoxBorder;
       ctx.lineWidth = 2;
@@ -735,6 +788,7 @@
       if (puzzleSolved) return;
 
       startTimerIfNeeded();
+      fnTriggerWatermarkMove(); // Trigger watermark shift on move
 
       let b = ring[ringIdx][4];
       for (let k = 0; k < 4; k++) {
