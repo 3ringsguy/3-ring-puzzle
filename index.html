@@ -182,13 +182,11 @@
       transition: opacity 0.3s ease;
     }
 
-    /* Matrix Themes Show Rain (90 deg) */
     body.matrix-theme .matrix-rain-container,
     body.matrix-bw-theme .matrix-rain-container {
       opacity: 1;
     }
 
-    /* Dark/Light Themes Show Side-by-side Watermark (0 deg) */
     body:not(.matrix-theme):not(.matrix-bw-theme) .static-watermark-container {
       opacity: 1;
     }
@@ -252,18 +250,24 @@
       }
     }
 
-    /* Side-by-Side Grid Watermark for Dark/Light Themes (0 degrees) */
-    .static-watermark-grid {
-      position: absolute;
-      top: -20%;
-      left: -20%;
+    /* Multi-column Side-by-Side Watermark Layout (0 degrees) */
+    .static-watermark-container {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-around;
       width: 140%;
       height: 140%;
+      top: -20%;
+      left: -20%;
+      position: absolute;
+    }
+
+    .watermark-column {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
       justify-content: space-around;
-      align-content: space-around;
-      transform: rotate(0deg);
+      align-items: center;
+      flex: 1;
       transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
@@ -274,7 +278,7 @@
       opacity: var(--watermark-opacity);
       user-select: none;
       white-space: nowrap;
-      padding: 30px 40px;
+      padding: 20px;
     }
 
     h2, p, .game-container, .btn-container {
@@ -364,21 +368,31 @@
   <!-- Falling Matrix Rain Watermark Layer (Matrix Themes) -->
   <div class="matrix-rain-container" id="matrixRainContainer"></div>
 
-  <!-- Side-by-side Grid Watermark Layer (Dark & Light Themes) -->
+  <!-- Multi-column Side-by-Side Watermark Layer (Dark & Light Themes) -->
   <div class="static-watermark-container" id="staticWatermarkContainer">
-    <div class="static-watermark-grid" id="staticWatermarkGrid">
+    <div class="watermark-column" data-col="1">
       <div class="static-watermark-item">@myturtlesgame2</div>
       <div class="static-watermark-item">@crazy_calculus</div>
       <div class="static-watermark-item">@myturtlesgame2</div>
       <div class="static-watermark-item">@crazy_calculus</div>
-      <div class="static-watermark-item">@myturtlesgame2</div>
+    </div>
+    <div class="watermark-column" data-col="2">
       <div class="static-watermark-item">@crazy_calculus</div>
       <div class="static-watermark-item">@myturtlesgame2</div>
       <div class="static-watermark-item">@crazy_calculus</div>
       <div class="static-watermark-item">@myturtlesgame2</div>
+    </div>
+    <div class="watermark-column" data-col="3">
+      <div class="static-watermark-item">@myturtlesgame2</div>
       <div class="static-watermark-item">@crazy_calculus</div>
       <div class="static-watermark-item">@myturtlesgame2</div>
       <div class="static-watermark-item">@crazy_calculus</div>
+    </div>
+    <div class="watermark-column" data-col="4">
+      <div class="static-watermark-item">@crazy_calculus</div>
+      <div class="static-watermark-item">@myturtlesgame2</div>
+      <div class="static-watermark-item">@crazy_calculus</div>
+      <div class="static-watermark-item">@myturtlesgame2</div>
     </div>
   </div>
 
@@ -405,7 +419,9 @@
     let timerInterval = null;
     let puzzleSolved = false;
     let timerStarted = false;
-    let moveCounter = 0; // Tracks moves for odd/even column shift feature
+    
+    // Column shifts tracker for each individual column index
+    let colShifts = { 1: 0, 2: 0, 3: 0, 4: 0 };
 
     const translations = {
       en: {
@@ -486,12 +502,19 @@
       draw();
     }
 
+    // Column independent movement feature on every move
     fnTriggerWatermarkMove = function() {
-      moveCounter++;
-      const grid = document.getElementById('staticWatermarkGrid');
-      // Odd column movement: Right (+45px), Even column movement: Left (-45px)
-      const shiftAmount = (moveCounter % 2 !== 0) ? 45 : -45;
-      grid.style.transform = `translateX(${shiftAmount}px)`;
+      const columns = document.querySelectorAll('.watermark-column');
+      columns.forEach(col => {
+        const colNum = parseInt(col.getAttribute('data-col'));
+        // Odd columns move right (+35px), Even columns move left (-35px)
+        if (colNum % 2 !== 0) {
+          colShifts[colNum] += 35;
+        } else {
+          colShifts[colNum] -= 35;
+        }
+        col.style.transform = `translateX(${colShifts[colNum]}px)`;
+      });
     };
 
     function updateUIText() {
@@ -545,7 +568,7 @@
       clearInterval(timerInterval);
     }
 
-    // Generate high-frequency, unevenly randomized falling rain watermarks (Matrix Themes)
+    // Generate high-frequency rain drops for Matrix themes
     const rainContainer = document.getElementById('matrixRainContainer');
     const handles = ["@myturtlesgame2", "@crazy_calculus"];
     const dropCount = 45;
@@ -788,7 +811,7 @@
       if (puzzleSolved) return;
 
       startTimerIfNeeded();
-      fnTriggerWatermarkMove(); // Trigger watermark shift on move
+      fnTriggerWatermarkMove(); // Trigger individual column shifts per move
 
       let b = ring[ringIdx][4];
       for (let k = 0; k < 4; k++) {
