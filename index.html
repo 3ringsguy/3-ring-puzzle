@@ -36,6 +36,22 @@
       --watermark-opacity: 0.08;
     }
 
+    body.matrix-theme {
+      --bg-color: #020b06;
+      --text-color: #00ff66;
+      --subtext-color: #2ea043;
+      --container-bg: #05160d;
+      --border-color: #00ff66;
+      --btn-bg: #0b2918;
+      --btn-hover: #124026;
+      --btn-border: #00ff66;
+      --btn-text: #00ff66;
+      --win-color: #ffffff;
+      --node-stroke: #020b06;
+      --thumbnail-bg: #05160d;
+      --watermark-opacity: 0.35;
+    }
+
     body {
       background-color: var(--bg-color);
       color: var(--text-color);
@@ -53,14 +69,12 @@
       transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    /* Top-Left Controls Container */
-    .top-left-controls {
+    /* Top-Left Settings Container */
+    .settings-container {
       position: absolute;
       top: 20px;
       left: 20px;
-      display: flex;
-      gap: 8px;
-      z-index: 10;
+      z-index: 20;
     }
 
     .top-btn {
@@ -78,6 +92,46 @@
       background-color: var(--btn-hover);
       border-color: #89b4fa;
       color: #89b4fa;
+    }
+
+    /* Dropdown Settings Menu */
+    .settings-menu {
+      display: none;
+      position: absolute;
+      top: 45px;
+      left: 0;
+      background-color: var(--container-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 160px;
+      z-index: 30;
+    }
+
+    .settings-menu.show {
+      display: flex;
+    }
+
+    .settings-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .settings-item select {
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+      border: 1px solid var(--btn-border);
+      padding: 6px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
     }
 
     /* Top-Right Timer */
@@ -113,6 +167,7 @@
       opacity: var(--watermark-opacity);
       padding: 20px;
       box-sizing: border-box;
+      overflow: hidden;
       transition: opacity 0.3s ease;
     }
 
@@ -126,6 +181,23 @@
       justify-content: center;
       white-space: nowrap;
       user-select: none;
+    }
+
+    /* Matrix Hacker Animation */
+    body.matrix-theme .bg-watermark-item {
+      animation: matrixFall 6s linear infinite, matrixShine 1.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes matrixFall {
+      0% { transform: translateY(-40px) rotate(-25deg); opacity: 0; }
+      15% { opacity: var(--watermark-opacity); }
+      85% { opacity: var(--watermark-opacity); }
+      100% { transform: translateY(500px) rotate(-25deg); opacity: 0; }
+    }
+
+    @keyframes matrixShine {
+      0% { color: #00ff66; text-shadow: 0 0 6px #00ff66; }
+      100% { color: #ffffff; text-shadow: 0 0 12px #ffffff, 0 0 25px #00ff66; }
     }
 
     h2, p, .game-container, .btn-container {
@@ -189,10 +261,23 @@
 </head>
 <body>
 
-  <!-- Top-Left Control Buttons -->
-  <div class="top-left-controls">
-    <button class="top-btn" id="langBtn" onclick="toggleLanguage()">中文</button>
-    <button class="top-btn" id="themeBtn" onclick="toggleTheme()">Light</button>
+  <!-- Top-Left Settings Menu Container -->
+  <div class="settings-container" id="settingsContainer">
+    <button class="top-btn" id="settingsBtn" onclick="toggleSettingsMenu()">⚙️ Settings</button>
+    <div class="settings-menu" id="settingsMenu">
+      <div class="settings-item">
+        <span id="txtLangLabel">Language</span>
+        <button class="top-btn" id="langBtn" onclick="toggleLanguage()">中文</button>
+      </div>
+      <div class="settings-item">
+        <span id="txtThemeLabel">Theme</span>
+        <select id="themeSelect" onchange="changeTheme(this.value)">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="matrix">Matrix</option>
+        </select>
+      </div>
+    </div>
   </div>
 
   <!-- Top-Right Timer -->
@@ -217,9 +302,9 @@
   </div>
 
   <script>
-    // State Variables (Default Dark Theme)
+    // State Variables
     let currentLang = 'en';
-    let isDarkTheme = true;
+    let currentTheme = 'dark';
     let startTime = null;
     let timerInterval = null;
     let puzzleSolved = false;
@@ -227,9 +312,13 @@
 
     const translations = {
       en: {
+        settingsBtn: "⚙️ Settings",
+        langLabel: "Language",
+        themeLabel: "Theme",
         langBtn: "中文",
-        darkBtn: "Dark",
-        lightBtn: "Light",
+        darkOpt: "Dark",
+        lightOpt: "Light",
+        matrixOpt: "Matrix",
         title: "3-Ring Interlocking Puzzle",
         instruction: "Click any ring, use buttons below, or press keys 1, 2, 3 to rotate counterclockwise.",
         targetGoal: "TARGET GOAL",
@@ -244,9 +333,13 @@
         timeLabel: "Time: "
       },
       zh: {
+        settingsBtn: "⚙️ 設定",
+        langLabel: "語言",
+        themeLabel: "主題",
         langBtn: "Eng",
-        darkBtn: "深色",
-        lightBtn: "淺色",
+        darkOpt: "深色",
+        lightOpt: "淺色",
+        matrixOpt: "駭客任務 (Matrix)",
         title: "三環相扣拼圖",
         instruction: "點擊任意環、使用下方按鈕，或按下鍵盤 1、2、3 鍵進行逆時針旋轉。",
         targetGoal: "目標完成狀態",
@@ -262,23 +355,49 @@
       }
     };
 
+    function toggleSettingsMenu() {
+      const menu = document.getElementById('settingsMenu');
+      menu.classList.toggle('show');
+    }
+
+    // Close settings menu when clicking outside
+    window.addEventListener('click', function(e) {
+      const container = document.getElementById('settingsContainer');
+      if (!container.contains(e.target)) {
+        document.getElementById('settingsMenu').classList.remove('show');
+      }
+    });
+
     function toggleLanguage() {
       currentLang = currentLang === 'en' ? 'zh' : 'en';
       updateUIText();
       draw();
     }
 
-    function toggleTheme() {
-      isDarkTheme = !isDarkTheme;
-      document.body.classList.toggle('light-theme', !isDarkTheme);
+    function changeTheme(theme) {
+      currentTheme = theme;
+      document.body.classList.remove('light-theme', 'matrix-theme');
+      if (theme === 'light') {
+        document.body.classList.add('light-theme');
+      } else if (theme === 'matrix') {
+        document.body.classList.add('matrix-theme');
+      }
       updateUIText();
       draw();
     }
 
     function updateUIText() {
       const t = translations[currentLang];
+      document.getElementById('settingsBtn').textContent = t.settingsBtn;
+      document.getElementById('txtLangLabel').textContent = t.langLabel;
+      document.getElementById('txtThemeLabel').textContent = t.themeLabel;
       document.getElementById('langBtn').textContent = t.langBtn;
-      document.getElementById('themeBtn').textContent = isDarkTheme ? t.lightBtn : t.darkBtn;
+      
+      const themeSelect = document.getElementById('themeSelect');
+      themeSelect.options[0].text = t.darkOpt;
+      themeSelect.options[1].text = t.lightOpt;
+      themeSelect.options[2].text = t.matrixOpt;
+
       document.getElementById('txtTitle').textContent = t.title;
       document.getElementById('txtInstruction').textContent = t.instruction;
       document.getElementById('btnRotate1').textContent = t.rot1;
@@ -317,13 +436,15 @@
       clearInterval(timerInterval);
     }
 
-    // Dynamically generate the repeated background watermarks
+    // Dynamically generate the repeated background watermarks with randomized animation offsets for Matrix mode
     const gridContainer = document.getElementById('bgWatermarkGrid');
     const handles = ["@myturtlesgame2", "@crazy_calculus"];
     for (let i = 0; i < 24; i++) {
       const div = document.createElement('div');
       div.className = 'bg-watermark-item';
       div.textContent = handles[i % handles.length];
+      div.style.animationDelay = `${(i * 0.3) % 4}s`;
+      div.style.animationDuration = `${4 + (i % 3) * 1.5}s`;
       gridContainer.appendChild(div);
     }
 
@@ -381,14 +502,14 @@
       ctx.save();
       
       // Target Goal Text
-      ctx.fillStyle = isDarkTheme ? '#cdd6f4' : '#2e303e';
+      ctx.fillStyle = currentTheme === 'light' ? '#2e303e' : '#cdd6f4';
       ctx.font = 'bold 11px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(translations[currentLang].targetGoal, 510, 26);
 
       // Thumbnail Box
-      ctx.fillStyle = isDarkTheme ? '#1e1e2e' : '#f8f9fc';
-      ctx.strokeStyle = isDarkTheme ? '#585b70' : '#ccd0da';
+      ctx.fillStyle = currentTheme === 'light' ? '#f8f9fc' : '#1e1e2e';
+      ctx.strokeStyle = currentTheme === 'light' ? '#ccd0da' : '#585b70';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.roundRect(435, 36, 150, 115, 8);
@@ -403,7 +524,7 @@
       [tc1, tc2, tc3].forEach(c => {
         ctx.beginPath();
         ctx.arc(c.x, c.y, tR, 0, Math.PI * 2);
-        ctx.strokeStyle = isDarkTheme ? '#585b70' : '#ccd0da';
+        ctx.strokeStyle = currentTheme === 'light' ? '#ccd0da' : '#585b70';
         ctx.lineWidth = 1.5;
         ctx.stroke();
       });
@@ -429,7 +550,7 @@
         ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
         ctx.fillStyle = colorMap[node.val];
         ctx.fill();
-        ctx.strokeStyle = isDarkTheme ? '#11111b' : '#ffffff';
+        ctx.strokeStyle = currentTheme === 'light' ? '#ffffff' : '#11111b';
         ctx.lineWidth = 1;
         ctx.stroke();
       });
@@ -440,9 +561,9 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const ringStrokeColor = isDarkTheme ? '#585b70' : '#b8c0de';
-      const labelColor = isDarkTheme ? '#a6adc8' : '#4c4f69';
-      const nodeStrokeColor = isDarkTheme ? '#11111b' : '#ffffff';
+      const ringStrokeColor = currentTheme === 'light' ? '#b8c0de' : (currentTheme === 'matrix' ? '#00ff66' : '#585b70');
+      const labelColor = currentTheme === 'light' ? '#4c4f69' : (currentTheme === 'matrix' ? '#2ea043' : '#a6adc8');
+      const nodeStrokeColor = currentTheme === 'light' ? '#ffffff' : (currentTheme === 'matrix' ? '#020b06' : '#11111b');
 
       const centers = [C1, C2, C3];
       centers.forEach((c) => {
@@ -512,7 +633,6 @@
     function rotateRing(ringIdx) {
       if (puzzleSolved) return;
 
-      // Start timer on the very first move
       startTimerIfNeeded();
 
       let b = ring[ringIdx][4];
@@ -578,7 +698,7 @@
       }
     });
 
-    // Keyboard controls support for keys '1', '2', '3'
+    // Keyboard support for '1', '2', '3'
     window.addEventListener('keydown', function(event) {
       if (event.key === '1') {
         rotateRing(0);
