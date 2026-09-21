@@ -202,7 +202,7 @@
   <div class="bg-watermark-grid" id="bgWatermarkGrid"></div>
 
   <h2 id="txtTitle">3-Ring Interlocking Puzzle</h2>
-  <p id="txtInstruction">Click any ring area or use the buttons below to rotate counterclockwise.</p>
+  <p id="txtInstruction">Click any ring, use buttons below, or press keys 1, 2, 3 to rotate counterclockwise.</p>
 
   <div class="game-container">
     <canvas id="puzzleCanvas" width="600" height="470"></canvas>
@@ -231,7 +231,7 @@
         darkBtn: "Dark",
         lightBtn: "Light",
         title: "3-Ring Interlocking Puzzle",
-        instruction: "Click any ring area or use the buttons below to rotate counterclockwise.",
+        instruction: "Click any ring, use buttons below, or press keys 1, 2, 3 to rotate counterclockwise.",
         targetGoal: "TARGET GOAL",
         ring1: "RING 1",
         ring2: "RING 2",
@@ -248,7 +248,7 @@
         darkBtn: "深色",
         lightBtn: "淺色",
         title: "三環相扣拼圖",
-        instruction: "點擊任意環區域或使用下方按鈕進行逆時針旋轉。",
+        instruction: "點擊任意環、使用下方按鈕，或按下鍵盤 1、2、3 鍵進行逆時針旋轉。",
         targetGoal: "目標完成狀態",
         ring1: "第一環",
         ring2: "第二環",
@@ -575,6 +575,17 @@
           rotateRing(i);
           break;
         }
+      }
+    });
+
+    // Keyboard controls support for keys '1', '2', '3'
+    window.addEventListener('keydown', function(event) {
+      if (event.key === '1') {
+        rotateRing(0);
+      } else if (event.key === '2') {
+        rotateRing(1);
+      } else if (event.key === '3') {
+        rotateRing(2);
       }
     });
 
