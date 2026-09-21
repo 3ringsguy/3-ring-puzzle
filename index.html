@@ -49,7 +49,23 @@
       --win-color: #ffffff;
       --node-stroke: #020b06;
       --thumbnail-bg: #05160d;
-      --watermark-opacity: 0.35;
+      --watermark-opacity: 0.4;
+    }
+
+    body.matrix-bw-theme {
+      --bg-color: #000000;
+      --text-color: #ffffff;
+      --subtext-color: #aaaaaa;
+      --container-bg: #0a0a0a;
+      --border-color: #ffffff;
+      --btn-bg: #1c1c1c;
+      --btn-hover: #333333;
+      --btn-border: #ffffff;
+      --btn-text: #ffffff;
+      --win-color: #00ff66;
+      --node-stroke: #000000;
+      --thumbnail-bg: #0a0a0a;
+      --watermark-opacity: 0.4;
     }
 
     body {
@@ -105,7 +121,6 @@
       border-radius: 8px;
       padding: 12px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-      display: none;
       flex-direction: column;
       gap: 10px;
       min-width: 160px;
@@ -152,52 +167,84 @@
       transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
     }
 
-    /* Tiled Background Watermarks */
-    .bg-watermark-grid {
+    /* Falling Rain Watermarks Container */
+    .matrix-rain-container {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      grid-template-rows: repeat(6, 1fr);
       pointer-events: none;
       z-index: 0;
-      opacity: var(--watermark-opacity);
-      padding: 20px;
-      box-sizing: border-box;
       overflow: hidden;
+      opacity: 0;
       transition: opacity 0.3s ease;
     }
 
-    .bg-watermark-item {
-      font-size: 16px;
+    body.matrix-theme .matrix-rain-container,
+    body.matrix-bw-theme .matrix-rain-container {
+      opacity: 1;
+    }
+
+    .rain-drop {
+      position: absolute;
+      font-size: 14px;
       font-weight: bold;
-      color: var(--text-color);
-      transform: rotate(-25deg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
       white-space: nowrap;
       user-select: none;
+      transform: rotate(90deg);
+      animation-name: fallRain;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
     }
 
-    /* Matrix Hacker Animation */
-    body.matrix-theme .bg-watermark-item {
-      animation: matrixFall 6s linear infinite, matrixShine 1.2s ease-in-out infinite alternate;
+    /* Matrix Green Shine */
+    body.matrix-theme .rain-drop {
+      animation-name: fallRain, matrixGreenShine;
     }
 
-    @keyframes matrixFall {
-      0% { transform: translateY(-40px) rotate(-25deg); opacity: 0; }
-      15% { opacity: var(--watermark-opacity); }
-      85% { opacity: var(--watermark-opacity); }
-      100% { transform: translateY(500px) rotate(-25deg); opacity: 0; }
+    /* Matrix B&W Shine */
+    body.matrix-bw-theme .rain-drop {
+      animation-name: fallRain, matrixBwShine;
     }
 
-    @keyframes matrixShine {
-      0% { color: #00ff66; text-shadow: 0 0 6px #00ff66; }
-      100% { color: #ffffff; text-shadow: 0 0 12px #ffffff, 0 0 25px #00ff66; }
+    @keyframes fallRain {
+      0% {
+        transform: translateY(-50px) rotate(90deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: var(--watermark-opacity);
+      }
+      90% {
+        opacity: var(--watermark-opacity);
+      }
+      100% {
+        transform: translateY(105vh) rotate(90deg);
+        opacity: 0;
+      }
+    }
+
+    @keyframes matrixGreenShine {
+      0%, 100% {
+        color: #00ff66;
+        text-shadow: 0 0 4px #00ff66;
+      }
+      50% {
+        color: #ffffff;
+        text-shadow: 0 0 12px #ffffff, 0 0 20px #00ff66;
+      }
+    }
+
+    @keyframes matrixBwShine {
+      0%, 100% {
+        color: #555555;
+        text-shadow: 0 0 4px #222222;
+      }
+      50% {
+        color: #ffffff;
+        text-shadow: 0 0 12px #ffffff, 0 0 20px #ffffff;
+      }
     }
 
     h2, p, .game-container, .btn-container {
@@ -275,6 +322,7 @@
           <option value="dark">Dark</option>
           <option value="light">Light</option>
           <option value="matrix">Matrix</option>
+          <option value="matrix-bw">Matrix B&W</option>
         </select>
       </div>
     </div>
@@ -283,8 +331,8 @@
   <!-- Top-Right Timer -->
   <div class="timer-display" id="timerDisplay">Time: 0.00s</div>
 
-  <!-- Background Watermark Pattern Layer -->
-  <div class="bg-watermark-grid" id="bgWatermarkGrid"></div>
+  <!-- Falling Matrix Rain Watermark Layer -->
+  <div class="matrix-rain-container" id="matrixRainContainer"></div>
 
   <h2 id="txtTitle">3-Ring Interlocking Puzzle</h2>
   <p id="txtInstruction">Click any ring, use buttons below, or press keys 1, 2, 3 to rotate counterclockwise.</p>
@@ -319,6 +367,7 @@
         darkOpt: "Dark",
         lightOpt: "Light",
         matrixOpt: "Matrix",
+        matrixBwOpt: "Matrix B&W",
         title: "3-Ring Interlocking Puzzle",
         instruction: "Click any ring, use buttons below, or press keys 1, 2, 3 to rotate counterclockwise.",
         targetGoal: "TARGET GOAL",
@@ -340,6 +389,7 @@
         darkOpt: "深色",
         lightOpt: "淺色",
         matrixOpt: "駭客任務 (Matrix)",
+        matrixBwOpt: "黑白駭客 (Matrix B&W)",
         title: "三環相扣拼圖",
         instruction: "點擊任意環、使用下方按鈕，或按下鍵盤 1、2、3 鍵進行逆時針旋轉。",
         targetGoal: "目標完成狀態",
@@ -376,11 +426,13 @@
 
     function changeTheme(theme) {
       currentTheme = theme;
-      document.body.classList.remove('light-theme', 'matrix-theme');
+      document.body.classList.remove('light-theme', 'matrix-theme', 'matrix-bw-theme');
       if (theme === 'light') {
         document.body.classList.add('light-theme');
       } else if (theme === 'matrix') {
         document.body.classList.add('matrix-theme');
+      } else if (theme === 'matrix-bw') {
+        document.body.classList.add('matrix-bw-theme');
       }
       updateUIText();
       draw();
@@ -397,6 +449,7 @@
       themeSelect.options[0].text = t.darkOpt;
       themeSelect.options[1].text = t.lightOpt;
       themeSelect.options[2].text = t.matrixOpt;
+      themeSelect.options[3].text = t.matrixBwOpt;
 
       document.getElementById('txtTitle').textContent = t.title;
       document.getElementById('txtInstruction').textContent = t.instruction;
@@ -436,16 +489,28 @@
       clearInterval(timerInterval);
     }
 
-    // Dynamically generate the repeated background watermarks with randomized animation offsets for Matrix mode
-    const gridContainer = document.getElementById('bgWatermarkGrid');
+    // Generate high-frequency, unevenly randomized falling rain watermarks
+    const rainContainer = document.getElementById('matrixRainContainer');
     const handles = ["@myturtlesgame2", "@crazy_calculus"];
-    for (let i = 0; i < 24; i++) {
+    const dropCount = 45; // Increased frequency
+
+    for (let i = 0; i < dropCount; i++) {
       const div = document.createElement('div');
-      div.className = 'bg-watermark-item';
-      div.textContent = handles[i % handles.length];
-      div.style.animationDelay = `${(i * 0.3) % 4}s`;
-      div.style.animationDuration = `${4 + (i % 3) * 1.5}s`;
-      gridContainer.appendChild(div);
+      div.className = 'rain-drop';
+      div.textContent = handles[Math.floor(Math.random() * handles.length)];
+      
+      // Uneven randomized positions, durations, delays, and opacities
+      const randomLeft = Math.random() * 100;
+      const randomDuration = 2.5 + Math.random() * 4.5; // between 2.5s and 7s
+      const randomDelay = Math.random() * 6; // staggered start times
+      const randomFontSize = 11 + Math.floor(Math.random() * 7); // 11px to 17px
+      
+      div.style.left = `${randomLeft}%`;
+      div.style.animationDuration = `${randomDuration}s, ${1.0 + Math.random() * 1.5}s`;
+      div.style.animationDelay = `${randomDelay}s, ${randomDelay}s`;
+      div.style.fontSize = `${randomFontSize}px`;
+      
+      rainContainer.appendChild(div);
     }
 
     const canvas = document.getElementById('puzzleCanvas');
@@ -501,15 +566,37 @@
     function drawThumbnail() {
       ctx.save();
       
-      // Target Goal Text
-      ctx.fillStyle = currentTheme === 'light' ? '#2e303e' : '#cdd6f4';
+      // Target Goal Text Color Configuration
+      let targetTextColor = '#cdd6f4';
+      let thumbBoxBg = '#1e1e2e';
+      let thumbBoxBorder = '#585b70';
+      let thumbNodeStroke = '#11111b';
+
+      if (currentTheme === 'light') {
+        targetTextColor = '#2e303e';
+        thumbBoxBg = '#f8f9fc';
+        thumbBoxBorder = '#ccd0da';
+        thumbNodeStroke = '#ffffff';
+      } else if (currentTheme === 'matrix') {
+        targetTextColor = '#00ff66';
+        thumbBoxBg = '#05160d';
+        thumbBoxBorder = '#00ff66';
+        thumbNodeStroke = '#020b06';
+      } else if (currentTheme === 'matrix-bw') {
+        targetTextColor = '#ffffff';
+        thumbBoxBg = '#0a0a0a';
+        thumbBoxBorder = '#ffffff';
+        thumbNodeStroke = '#000000';
+      }
+
+      ctx.fillStyle = targetTextColor;
       ctx.font = 'bold 11px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(translations[currentLang].targetGoal, 510, 26);
 
       // Thumbnail Box
-      ctx.fillStyle = currentTheme === 'light' ? '#f8f9fc' : '#1e1e2e';
-      ctx.strokeStyle = currentTheme === 'light' ? '#ccd0da' : '#585b70';
+      ctx.fillStyle = thumbBoxBg;
+      ctx.strokeStyle = thumbBoxBorder;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.roundRect(435, 36, 150, 115, 8);
@@ -524,7 +611,7 @@
       [tc1, tc2, tc3].forEach(c => {
         ctx.beginPath();
         ctx.arc(c.x, c.y, tR, 0, Math.PI * 2);
-        ctx.strokeStyle = currentTheme === 'light' ? '#ccd0da' : '#585b70';
+        ctx.strokeStyle = thumbBoxBorder;
         ctx.lineWidth = 1.5;
         ctx.stroke();
       });
@@ -550,7 +637,7 @@
         ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
         ctx.fillStyle = colorMap[node.val];
         ctx.fill();
-        ctx.strokeStyle = currentTheme === 'light' ? '#ffffff' : '#11111b';
+        ctx.strokeStyle = thumbNodeStroke;
         ctx.lineWidth = 1;
         ctx.stroke();
       });
@@ -561,9 +648,23 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const ringStrokeColor = currentTheme === 'light' ? '#b8c0de' : (currentTheme === 'matrix' ? '#00ff66' : '#585b70');
-      const labelColor = currentTheme === 'light' ? '#4c4f69' : (currentTheme === 'matrix' ? '#2ea043' : '#a6adc8');
-      const nodeStrokeColor = currentTheme === 'light' ? '#ffffff' : (currentTheme === 'matrix' ? '#020b06' : '#11111b');
+      let ringStrokeColor = '#585b70';
+      let labelColor = '#a6adc8';
+      let nodeStrokeColor = '#11111b';
+
+      if (currentTheme === 'light') {
+        ringStrokeColor = '#b8c0de';
+        labelColor = '#4c4f69';
+        nodeStrokeColor = '#ffffff';
+      } else if (currentTheme === 'matrix') {
+        ringStrokeColor = '#00ff66';
+        labelColor = '#2ea043';
+        nodeStrokeColor = '#020b06';
+      } else if (currentTheme === 'matrix-bw') {
+        ringStrokeColor = '#ffffff';
+        labelColor = '#888888';
+        nodeStrokeColor = '#000000';
+      }
 
       const centers = [C1, C2, C3];
       centers.forEach((c) => {
