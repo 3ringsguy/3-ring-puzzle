@@ -250,10 +250,10 @@
       }
     }
 
-    /* Multi-column Side-by-Side Watermark Layout (0 degrees) */
+    /* Multi-row Side-by-Side Watermark Layout (0 degrees) */
     .static-watermark-container {
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       justify-content: space-around;
       width: 140%;
       height: 140%;
@@ -262,12 +262,12 @@
       position: absolute;
     }
 
-    .watermark-column {
+    .watermark-row {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       justify-content: space-around;
       align-items: center;
-      flex: 1;
+      width: 100%;
       transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
@@ -368,27 +368,27 @@
   <!-- Falling Matrix Rain Watermark Layer (Matrix Themes) -->
   <div class="matrix-rain-container" id="matrixRainContainer"></div>
 
-  <!-- Multi-column Side-by-Side Watermark Layer (Dark & Light Themes) -->
+  <!-- Multi-row Side-by-Side Watermark Layer (Dark & Light Themes) -->
   <div class="static-watermark-container" id="staticWatermarkContainer">
-    <div class="watermark-column" data-col="1">
+    <div class="watermark-row" data-row="1">
       <div class="static-watermark-item">@myturtlesgame2</div>
       <div class="static-watermark-item">@crazy_calculus</div>
       <div class="static-watermark-item">@myturtlesgame2</div>
       <div class="static-watermark-item">@crazy_calculus</div>
     </div>
-    <div class="watermark-column" data-col="2">
+    <div class="watermark-row" data-row="2">
       <div class="static-watermark-item">@crazy_calculus</div>
       <div class="static-watermark-item">@myturtlesgame2</div>
       <div class="static-watermark-item">@crazy_calculus</div>
       <div class="static-watermark-item">@myturtlesgame2</div>
     </div>
-    <div class="watermark-column" data-col="3">
+    <div class="watermark-row" data-row="3">
       <div class="static-watermark-item">@myturtlesgame2</div>
       <div class="static-watermark-item">@crazy_calculus</div>
       <div class="static-watermark-item">@myturtlesgame2</div>
       <div class="static-watermark-item">@crazy_calculus</div>
     </div>
-    <div class="watermark-column" data-col="4">
+    <div class="watermark-row" data-row="4">
       <div class="static-watermark-item">@crazy_calculus</div>
       <div class="static-watermark-item">@myturtlesgame2</div>
       <div class="static-watermark-item">@crazy_calculus</div>
@@ -420,8 +420,8 @@
     let puzzleSolved = false;
     let timerStarted = false;
     
-    // Column shifts tracker for each individual column index
-    let colShifts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    // Row shifts tracker for each individual row index
+    let rowShifts = { 1: 0, 2: 0, 3: 0, 4: 0 };
 
     const translations = {
       en: {
@@ -502,18 +502,18 @@
       draw();
     }
 
-    // Column independent movement feature on every move
+    // Row independent movement feature on every move:
+    // Row 1 moves right, Row 2 moves left, Row 3 moves right, Row 4 moves left.
     fnTriggerWatermarkMove = function() {
-      const columns = document.querySelectorAll('.watermark-column');
-      columns.forEach(col => {
-        const colNum = parseInt(col.getAttribute('data-col'));
-        // Odd columns move right (+35px), Even columns move left (-35px)
-        if (colNum % 2 !== 0) {
-          colShifts[colNum] += 35;
+      const rows = document.querySelectorAll('.watermark-row');
+      rows.forEach(row => {
+        const rowNum = parseInt(row.getAttribute('data-row'));
+        if (rowNum % 2 !== 0) {
+          rowShifts[rowNum] += 35; // Odd rows move right
         } else {
-          colShifts[colNum] -= 35;
+          rowShifts[rowNum] -= 35; // Even rows move left
         }
-        col.style.transform = `translateX(${colShifts[colNum]}px)`;
+        row.style.transform = `translateX(${rowShifts[rowNum]}px)`;
       });
     };
 
@@ -811,7 +811,7 @@
       if (puzzleSolved) return;
 
       startTimerIfNeeded();
-      fnTriggerWatermarkMove(); // Trigger individual column shifts per move
+      fnTriggerWatermarkMove(); // Trigger individual row shifts per move
 
       let b = ring[ringIdx][4];
       for (let k = 0; k < 4; k++) {
