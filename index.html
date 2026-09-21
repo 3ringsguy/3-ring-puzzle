@@ -250,15 +250,15 @@
       }
     }
 
-    /* Multi-row Side-by-Side Watermark Layout (0 degrees) */
+    /* High-Frequency Infinite Row Layout (0 degrees) */
     .static-watermark-container {
       display: flex;
       flex-direction: column;
-      justify-content: space-around;
-      width: 140%;
-      height: 140%;
-      top: -20%;
-      left: -20%;
+      justify-content: space-between;
+      width: 250%;
+      height: 250%;
+      top: -75%;
+      left: -75%;
       position: absolute;
     }
 
@@ -278,7 +278,7 @@
       opacity: var(--watermark-opacity);
       user-select: none;
       white-space: nowrap;
-      padding: 20px;
+      padding: 10px 40px;
     }
 
     h2, p, .game-container, .btn-container {
@@ -368,33 +368,8 @@
   <!-- Falling Matrix Rain Watermark Layer (Matrix Themes) -->
   <div class="matrix-rain-container" id="matrixRainContainer"></div>
 
-  <!-- Multi-row Side-by-Side Watermark Layer (Dark & Light Themes) -->
-  <div class="static-watermark-container" id="staticWatermarkContainer">
-    <div class="watermark-row" data-row="1">
-      <div class="static-watermark-item">@myturtlesgame2</div>
-      <div class="static-watermark-item">@crazy_calculus</div>
-      <div class="static-watermark-item">@myturtlesgame2</div>
-      <div class="static-watermark-item">@crazy_calculus</div>
-    </div>
-    <div class="watermark-row" data-row="2">
-      <div class="static-watermark-item">@crazy_calculus</div>
-      <div class="static-watermark-item">@myturtlesgame2</div>
-      <div class="static-watermark-item">@crazy_calculus</div>
-      <div class="static-watermark-item">@myturtlesgame2</div>
-    </div>
-    <div class="watermark-row" data-row="3">
-      <div class="static-watermark-item">@myturtlesgame2</div>
-      <div class="static-watermark-item">@crazy_calculus</div>
-      <div class="static-watermark-item">@myturtlesgame2</div>
-      <div class="static-watermark-item">@crazy_calculus</div>
-    </div>
-    <div class="watermark-row" data-row="4">
-      <div class="static-watermark-item">@crazy_calculus</div>
-      <div class="static-watermark-item">@myturtlesgame2</div>
-      <div class="static-watermark-item">@crazy_calculus</div>
-      <div class="static-watermark-item">@myturtlesgame2</div>
-    </div>
-  </div>
+  <!-- High-Frequency Infinite Row Watermark Layer (Dark & Light Themes) -->
+  <div class="static-watermark-container" id="staticWatermarkContainer"></div>
 
   <h2 id="txtTitle">3-Ring Interlocking Puzzle</h2>
   <p id="txtInstruction">Click any ring, use buttons below, or press keys 1, 2, 3 to rotate counterclockwise.</p>
@@ -420,8 +395,34 @@
     let puzzleSolved = false;
     let timerStarted = false;
     
-    // Row shifts tracker for each individual row index
-    let rowShifts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    // Dynamic row shifts tracker and configuration
+    let rowShifts = {};
+    const totalRows = 24; // High frequency row density
+    const watermarkContainer = document.getElementById('staticWatermarkContainer');
+    const handles = ["@myturtlesgame2", "@crazy_calculus"];
+
+    // Dynamically build the high-frequency rows with infinite seamless looping bounds
+    function buildWatermarkRows() {
+      watermarkContainer.innerHTML = '';
+      rowShifts = {};
+      
+      for (let i = 1; i <= totalRows; i++) {
+        rowShifts[i] = 0;
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'watermark-row';
+        rowDiv.setAttribute('data-row', i);
+        
+        // Add multiple repeating spans per row for seamless looping coverage
+        for (let j = 0; j < 8; j++) {
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'static-watermark-item';
+          itemDiv.textContent = handles[(i + j) % handles.length];
+          rowDiv.appendChild(itemDiv);
+        }
+        watermarkContainer.appendChild(rowDiv);
+      }
+    }
+    buildWatermarkRows();
 
     const translations = {
       en: {
@@ -502,17 +503,26 @@
       draw();
     }
 
-    // Row independent movement feature on every move:
-    // Row 1 moves right, Row 2 moves left, Row 3 moves right, Row 4 moves left.
+    // Infinite loop shifting mechanism with auto-reset bounds so it never runs out or disappears
     fnTriggerWatermarkMove = function() {
       const rows = document.querySelectorAll('.watermark-row');
       rows.forEach(row => {
         const rowNum = parseInt(row.getAttribute('data-row'));
+        
+        // Odd rows move right (+35px), Even rows move left (-35px)
         if (rowNum % 2 !== 0) {
-          rowShifts[rowNum] += 35; // Odd rows move right
+          rowShifts[rowNum] += 35;
         } else {
-          rowShifts[rowNum] -= 35; // Even rows move left
+          rowShifts[rowNum] -= 35;
         }
+
+        // Infinite wrap loop bounds to keep watermark seamlessly looping forever
+        if (rowShifts[rowNum] > 400) {
+          rowShifts[rowNum] = -400;
+        } else if (rowShifts[rowNum] < -400) {
+          rowShifts[rowNum] = 400;
+        }
+
         row.style.transform = `translateX(${rowShifts[rowNum]}px)`;
       });
     };
@@ -570,7 +580,6 @@
 
     // Generate high-frequency rain drops for Matrix themes
     const rainContainer = document.getElementById('matrixRainContainer');
-    const handles = ["@myturtlesgame2", "@crazy_calculus"];
     const dropCount = 45;
 
     for (let i = 0; i < dropCount; i++) {
@@ -811,7 +820,7 @@
       if (puzzleSolved) return;
 
       startTimerIfNeeded();
-      fnTriggerWatermarkMove(); // Trigger individual row shifts per move
+      fnTriggerWatermarkMove(); // Trigger individual row shifts per move with infinite looping bounds
 
       let b = ring[ringIdx][4];
       for (let k = 0; k < 4; k++) {
